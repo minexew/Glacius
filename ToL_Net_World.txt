@@ -1,0 +1,88 @@
+
+    Tales of Lanthaia In-Game Communication Protocol
+     ================================================
+
+     - 2-byte (word) message Id (yeah, performance)
+
+        Client-to-Server Messages
+         -------------------------
+            0x0080 world.nop
+                a.k.a. keep-alive
+                should be sent about every 5 seconds by the game client
+
+            0x2001 world.player_movement
+                payload:
+                    float x, y, z, angle
+
+            0x2002 world.zone_transition
+                payload:
+                    word zoneID
+
+            0x2003 world.say
+                payload:
+                    String text
+
+            0x2004 world.sync
+
+        Server-to-Client Messages
+         -------------------------
+            0x4001 world.welcome
+                sent immediately after player connects
+                payload:
+                    word pid
+                    string name
+                    string location
+                    word race
+                    word class
+                    word level
+                    word zoneID
+                    float x, y, z, angle
+                    dword goldAmount
+
+            0x4002 world.player_list
+                sent after world.welcome
+                payload:
+                    word playersNear
+                    for playersNear
+                        word pid
+                        string name
+                        word race
+                        word class
+                        word level
+                        float x, y, z, angle
+
+            0x4003 world.chat_message
+                payload:
+                    word channel
+                    string from
+                    string message
+
+            0x4004 world.player_status
+                payload:
+                    word pid
+                    string name
+                    word status
+
+            0x4005 world.player_location
+                payload:
+                    word pid
+                    float x, y, z, angle
+
+            0x4006 world.player_left_area
+                payload:
+                    word pid
+
+            0x4007 world.server_message
+                payload:
+                    string message
+
+            0x4008 world.spawn_world_obj
+                payload
+                    string name
+                    float x, y
+
+            0x4009 world.sync_rq
+
+            0x4010 world.remove_world_obj
+                payload
+                    float x, y

@@ -1,0 +1,9 @@
+Escape sekvence (funguje vsude kde se vykresluje text)
+
+\B -- tucny text
+\S -- text s trapnym stinem :D
+\0 - \9, \w -- cerna az bila
+\r, \g, \b -- zakladni barvy: red, green, blue
+\p, \l, \s, \o, \y -- odvozene barvy: purple, lime, sky, orange, yellow
+\#RGB (misto R, G, B cislice 0 - 9) -- ostatni barvy
+\\ -- vypise jedno \

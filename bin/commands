@@ -1,0 +1,47 @@
+
+    down [reason]
+        Puts the server into maintenance mode.
+        In this state, all incoming connection are rejected and the specified
+        reason is displayed to the disconnected client.
+        Already connected players are not removed automatically. (see the command `kickall`)
+
+        This is useful when it is required that no players connect to
+        the server, for example when performing initial server configuration
+        or database backup/maintenance.
+
+    exit
+        Shut down the server, removing all connected players as safely as possible.
+
+    get [svar-name ...]
+        Retrieve one or more configuration variables from the server database.
+
+    import file-name [arguments ...]
+        [!] Database-specific
+
+        Loads the specified file and executes its contents on the active database engine.
+        Additional arguments can be used in the script as $0, $1 etc.
+
+    kickall
+        Remove all players as safely as possible.
+
+    ls [timeout]
+        Lists all connected players.
+        Timeout is specified in milliseconds, default is 5000.
+
+    query command
+        [!] Database-specific
+
+        Executes the specified command on the active database engine.
+
+    restart
+        Stop the server engine and start it again.
+
+    set svar-name value
+        Set a configuration variable in the server database to the specified value.
+
+    svmsg message
+        Broadcasts the message to all connected clients.
+        Color coding and other features of the SGE Layout Engine can be used.
+
+    up
+        Changes the server state from maintenance mode back to normal.

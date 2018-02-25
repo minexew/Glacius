@@ -1,0 +1,22 @@
+
+{ --- General config --- }
+LoginServer
+    port: 24897
+
+{ --- Status Server --- }
+StatusServer
+    enabled: '0'
+    port: '80'
+
+{ --- sqlite3 database --- }
+Database (protocol: 'sqlite')
+    fileName: 'realm.db'
+
+{ --- mysql database --- }
+{
+Database (protocol: 'mysql')
+    host: ''
+    username: ''
+    pass: ''
+    db: '')
+}

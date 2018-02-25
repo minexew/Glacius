@@ -1,0 +1,6 @@
+-- usage: import scripts/port <charname> <x> <y> <z> <angle>
+
+UPDATE Characters SET x = '$1' WHERE Name = '$0';
+UPDATE Characters SET y = '$2' WHERE Name = '$0';
+UPDATE Characters SET z = '$3' WHERE Name = '$0';
+UPDATE Characters SET angle = '$4' WHERE Name = '$0';

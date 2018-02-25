@@ -1,0 +1,2 @@
+Map Sector = 200 m x 200 m
+Near = d < 200 m from player

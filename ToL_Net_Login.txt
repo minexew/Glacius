@@ -1,0 +1,87 @@
+
+    Tales of Lanthaia Login Stage Communication Protocol
+     ====================================================
+
+     - Default listening port: 24897
+     - Utf8 message names
+
+        Result Messages
+         ---------------
+            -- sent by the server in response to various client requests
+                no payload
+
+            result.ok
+            result.err_account_exists
+            result.err_character_exists
+            result.err_client_version
+            result.err_login_incorrect
+            result.err_login_required
+            result.err_max_characters_reached
+            result.err_name_invalid
+
+            -- internal (never sent by server, used by the client)
+            local.err_connect
+            local.err_send
+            local.err_timeout
+
+        Client-to-Server Messages
+         -------------------------
+            login.client_hello
+                payload:
+                    uint32_t clientVersion
+                notes: sent by the game client upon initial connection
+                response: login.server_info or an error message
+
+            login.keep_alive
+                notes: to prevent the server from killing the connection
+                        should be sent about every 10 seconds by the game client
+
+            login.login_request
+                payload:
+                    string username
+                    string password
+                response: a result code
+
+            login.registration_request
+                payload:
+                    string username
+                    string password
+                response: a result code
+
+            login.create_character
+                payload:
+                    String name
+                    uint16_t characterRace
+                responses: a result code
+                            if successfull, login.character_info is sent with updated information
+
+            login.enter_world
+                payload:
+                    uint16_t characterIndex
+                response: 'login.entering_world' or an error msg
+
+        Server-to-Client Messages
+         -------------------------
+            login.server_info
+                payload:
+                    string serverName
+                    string serverNews
+                notes: sent in response to 'login.client_hello'
+
+            login.server_down
+                payload:
+                    String reason
+                notes: may be sent in response to 'login.client_hello' (instead of 'login.server_info')
+
+            login.character_info
+                payload:
+                    uint16_t numCharacters
+                    for numCharacters:
+                        string name
+                        string location
+                        word race
+                        word class
+                        word level
+
+            login.entering_world
+                notes: sent in response to 'login.enter_world'

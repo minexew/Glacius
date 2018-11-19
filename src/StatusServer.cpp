@@ -7,8 +7,8 @@ namespace Glacius
 {
     StatusServer::StatusServer()
     {
-        int port = confGlobal->getOption( "StatusServer/port" );
-        listener = new TcpSocket( false );
+        int port = confGlobal->getOption( "StatusServer/port" ).toInt();
+        listener = TcpSocket::create( false );
 
         if ( !listener || !listener->listen( port ) )
             throw Exception( "Glacius.StatusServer.StartFailure", ( String )"Status Server startup at port " + port + " failed" );
@@ -31,7 +31,7 @@ namespace Glacius
         {
             while ( !shouldEnd )
             {
-                TcpSocket* incoming = listener->accept();
+                TcpSocket* incoming = listener->accept( false );
 
                 if ( incoming )
                 {

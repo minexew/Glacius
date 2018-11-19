@@ -6,33 +6,6 @@
 
 namespace Glacius
 {
-    class PrecTimer
-    {
-        LARGE_INTEGER begin, freq;
-
-        public:
-            PrecTimer()
-            {
-                QueryPerformanceFrequency( &freq );
-            }
-
-            void start()
-            {
-                QueryPerformanceCounter( &begin );
-            }
-
-            __int64 stop()
-            {
-                LARGE_INTEGER end;
-
-                QueryPerformanceCounter( &end );
-                return ( end.QuadPart - begin.QuadPart ) * 1000000 / freq.QuadPart;
-            }
-    };
-}
-
-namespace Glacius
-{
     using namespace li;
 
     static const unsigned invalidPid = 0xFFFFFFFF;
@@ -52,10 +25,10 @@ namespace Glacius
         clock_t syncBegin;
         SyncCallback onSync;
 
-        void broadcast( const StreamBuffer<>& buffer, unsigned excludePid );
+        void broadcast( const ArrayIOStream& buffer, unsigned excludePid );
         unsigned registerSession( WorldServerSession* session, CharacterProperties& props );
         void unregisterSession( unsigned pid, CharacterProperties& props );
-        static void writePlayerListItem( StreamBuffer<>& buffer, unsigned pid, CharacterProperties& props );
+        static void writePlayerListItem( ArrayIOStream& buffer, unsigned pid, CharacterProperties& props );
 
         friend class WorldServerSession;
 
@@ -93,8 +66,8 @@ namespace Glacius
             virtual ~WorldServerSession();
 
             const String& getName() const;
-            void send( const StreamBuffer<>& buffer );
+            void send( const ArrayIOStream& buffer );
             virtual void run();
-            void writePlayerListItem( StreamBuffer<>& buffer );
+            void writePlayerListItem( ArrayIOStream& buffer );
     };
 }

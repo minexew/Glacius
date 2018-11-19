@@ -49,7 +49,7 @@ static void run( const String& configFile )
 
         StatusServer* status = 0;
 
-        if ( confGlobal->getOption( "StatusServer/enabled", true ) )
+        if ( confGlobal->getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
             status = new StatusServer();

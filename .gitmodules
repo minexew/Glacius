@@ -1,0 +1,6 @@
+[submodule "dependencies/littl"]
+	path = dependencies/littl
+	url = https://github.com/minexew/littl.git
+[submodule "dependencies/libcfx2"]
+	path = dependencies/libcfx2
+	url = https://github.com/minexew/libcfx2.git

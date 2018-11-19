@@ -4,6 +4,9 @@
 #include "WorldServer.hpp"
 
 #include <Messages.hpp>
+
+#include <littl/PerfTiming.hpp>
+
 using namespace GameClient;
 
 namespace Glacius
@@ -24,17 +27,17 @@ namespace Glacius
     {
         onSync = callback;
 
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::sync_rq );
 
         syncBegin = clock();
         broadcast( buffer, invalidPid );
     }
 
-    void WorldServer::broadcast( const StreamBuffer<>& buffer, unsigned excludePid )
+    void WorldServer::broadcast( const ArrayIOStream& buffer, unsigned excludePid )
     {
-        PrecTimer tm;
-        tm.start();
+        PerfTimer tm;
+        auto start = tm.getCurrentMicros();
 
         for ( unsigned i = 0; i < clients.getLength(); i++ )
         {
@@ -44,7 +47,7 @@ namespace Glacius
                 client->send( buffer );
         }
 
-        unsigned bcastTime = tm.stop();
+        unsigned bcastTime = tm.getCurrentMicros() - start;
 
         if ( bcastTime > 100 )
             printf( "WARNING: WorldServer::broadcast [%u us]\n", bcastTime );
@@ -52,7 +55,7 @@ namespace Glacius
 
     void WorldServer::broadcast( CharacterProperties& broadcaster, const String& message )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::chat_message );
         buffer.write<uint16_t>( 0 );//channel
         buffer.writeString( broadcaster.name );
@@ -79,7 +82,7 @@ namespace Glacius
 
     void WorldServer::playerMoved( unsigned pid, CharacterProperties& props )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::player_location );
         buffer.write<uint16_t>( pid );
         buffer.write<float>( props.x );
@@ -98,20 +101,20 @@ namespace Glacius
         leave();
 
         // Inform others of the player becoming online
-        StreamBuffer<> notifyOnlineBuf;
+        ArrayIOStream notifyOnlineBuf;
         notifyOnlineBuf.write<uint16_t>( world::player_status );
         notifyOnlineBuf.write<uint16_t>( pid );
         notifyOnlineBuf.writeString( props.name );
         notifyOnlineBuf.write<uint16_t>( status::online );
 
         // Add the player to those near him
-        StreamBuffer<> addPlayerBuf;
+        ArrayIOStream addPlayerBuf;
         addPlayerBuf.write<uint16_t>( world::player_list );
         addPlayerBuf.write<uint16_t>( 1 );
         writePlayerListItem( addPlayerBuf, pid, props );
 
         // Retrieve the list of other players
-        StreamBuffer<> listPlayersBuf;
+        ArrayIOStream listPlayersBuf;
         listPlayersBuf.write<uint16_t>( world::player_list );
 
         listPlayersBuf.write<uint16_t>( numOnline - 1 );
@@ -144,7 +147,7 @@ namespace Glacius
 
     void WorldServer::removeWorldObj( float x, float y )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::remove_world_obj );
         buffer.write<float>( x );
         buffer.write<float>( y );
@@ -180,7 +183,7 @@ namespace Glacius
 
     void WorldServer::serverMessage( const String& message )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::server_message );
         buffer.writeString( message );
 
@@ -189,7 +192,7 @@ namespace Glacius
 
     void WorldServer::spawnWorldObj( const String& name, float x, float y, float o )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::spawn_world_obj );
         buffer.writeString( name );
         buffer.write<float>( x );
@@ -209,7 +212,7 @@ namespace Glacius
 
     void WorldServer::unregisterSession( unsigned pid, CharacterProperties& props )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.write<uint16_t>( world::player_status );
         buffer.write<uint16_t>( pid );
         buffer.writeString( props.name );
@@ -221,7 +224,7 @@ namespace Glacius
         numOnline--;
     }
 
-    void WorldServer::writePlayerListItem( StreamBuffer<>& buffer, unsigned pid, CharacterProperties& props )
+    void WorldServer::writePlayerListItem( ArrayIOStream& buffer, unsigned pid, CharacterProperties& props )
     {
         buffer.write<uint16_t>( pid );
         buffer.writeString( props.name );
@@ -257,7 +260,7 @@ namespace Glacius
         return props.name;
     }
 
-    void WorldServerSession::send( const StreamBuffer<>& buffer )
+    void WorldServerSession::send( const ArrayIOStream& buffer )
     {
         //enter();
         session->send( buffer );
@@ -268,7 +271,7 @@ namespace Glacius
     {
         try
         {
-            StreamBuffer<> buffer;
+            ArrayIOStream buffer;
 
             enter();
             sendWelcome();
@@ -276,14 +279,14 @@ namespace Glacius
 
             while ( session->isWritable() && !shouldEnd )
             {
-                PrecTimer tm;
-                tm.start();
+                PerfTimer tm;
+                auto start = tm.getCurrentMicros();
 
                 enter();
                 bool received = session->receive( buffer );
                 leave();
 
-                unsigned bcastTime = tm.stop();
+                unsigned bcastTime = tm.getCurrentMicros() - start;
 
                 if ( bcastTime > 400 )
                     printf( "WARNING: Session::receive [%u us]\n", bcastTime );
@@ -367,7 +370,7 @@ namespace Glacius
 
     void WorldServerSession::sendWelcome()
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
 
         buffer.write<uint16_t>( world::welcome );
         buffer.write<uint16_t>( pid );
@@ -386,7 +389,7 @@ namespace Glacius
         session->send( buffer );
     }
 
-    void WorldServerSession::writePlayerListItem( StreamBuffer<>& buffer )
+    void WorldServerSession::writePlayerListItem( ArrayIOStream& buffer )
     {
         //enter();
         WorldServer::writePlayerListItem( buffer, pid, props );

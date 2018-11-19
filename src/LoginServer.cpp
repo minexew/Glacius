@@ -4,6 +4,8 @@
 #include "Util.hpp"
 #include "WorldServer.hpp"
 
+#include <littl/PerfTiming.hpp>
+
 namespace Glacius
 {
     static const uint32_t currentVersion = 3;
@@ -12,9 +14,9 @@ namespace Glacius
 
     LoginServer::LoginServer() : nextId( 1 ), down( false )
     {
-        listener = new TcpSocket( false );
+        listener = TcpSocket::create( false );
 
-        if ( !listener || !listener->listen( confGlobal->getOption( "LoginServer/port" ) ) )
+        if ( !listener || !listener->listen( confGlobal->getOption( "LoginServer/port" ).toInt() ) )
             throw Exception( "Glacius.LoginServer.StartupFailure", "Login Server startup failed (port already in use?)" );
 
         destroyOnExit();
@@ -56,12 +58,12 @@ namespace Glacius
         {
             while ( !shouldEnd )
             {
-                PrecTimer tm;
-                tm.start();
+                PerfTimer tm;
+                auto start = tm.getCurrentMicros();
 
-                TcpSocket* incoming = listener->accept();
+                TcpSocket* incoming = listener->accept( false );
 
-                unsigned bcastTime = tm.stop();
+                unsigned bcastTime = tm.getCurrentMicros() - start;
 
                 if ( bcastTime > 1000 )
                     printf( "WARNING: listener->accept() [%u us]\n", bcastTime );
@@ -72,7 +74,7 @@ namespace Glacius
 
                     if ( down )
                     {
-                        StreamBuffer<> buffer;
+                        ArrayIOStream buffer;
 
                         buffer.writeString( "login.server_down" );
                         buffer.writeString( reason );
@@ -126,7 +128,7 @@ namespace Glacius
         {
             while ( true )
             {
-                StreamBuffer<> buffer;
+                ArrayIOStream buffer;
 
                 if ( !session->receive( buffer ) )
                     break;
@@ -329,7 +331,7 @@ namespace Glacius
 
     void LoginServerSession::sendCharacterInfo()
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         buffer.writeString( "login.character_info" );
 
         CharacterSummary chars[5];

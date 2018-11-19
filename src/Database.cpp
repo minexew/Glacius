@@ -2,10 +2,12 @@
 #include "Config.hpp"
 #include "Database.hpp"
 
-#include <BlueShine.h>
-
 //#define Driver_MySQL_mysql
 #define Driver_SQLite_sqlite
+
+#ifdef Driver_MySQL_mysql
+#include <BlueShine.h>
+#endif
 
 namespace Glacius
 {

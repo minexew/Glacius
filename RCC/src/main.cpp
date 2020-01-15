@@ -1,5 +1,5 @@
 
-#include <littl>
+#include <littl.hpp>
 
 using namespace li;
 
@@ -7,7 +7,7 @@ static TcpSocket* sock;
 
 bool receive()
 {
-    StreamBuffer<> buffer;
+    ArrayIOStream buffer;
 
     if ( sock->receive( buffer ) )
     {
@@ -61,9 +61,9 @@ int main( int argc, char** argv )
         return 0;
     }
 
-    sock = new TcpSocket( false );
+    sock = TcpSocket::create( false );
 
-    if ( !sock->connect( argv[1], 0x6141 ) )
+    if ( !sock->connect( argv[1], 0x6141, true ) )
     {
         printf( "unable to connect to '%s'\n", argv[1] );
         return 0;
@@ -71,7 +71,7 @@ int main( int argc, char** argv )
 
     while ( sock->isReadable() )
     {
-        StreamBuffer<> buffer;
+        ArrayIOStream buffer;
         Console console;
 
         printf( "\n> " );
@@ -127,17 +127,17 @@ int main( int argc, char** argv )
 
         sock->send( buffer );
 
-        unsigned start = GetTickCount();
+        unsigned start = relativeTime();
 
         while ( sock->isReadable() && !receive() )
         {
-            if ( GetTickCount() > start + 7000 )
+            if ( relativeTime() > start + 7000 )
             {
                 printf( "[Warning] Response timed out.\n" );
                 break;
             }
 
-            Sleep( 200 );
+            pauseThread( 200 );
         }
     }
 

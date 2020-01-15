@@ -37,3 +37,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC cfx2_08)
 # littl
 add_dependencies(${PROJECT_NAME} littl)
 target_link_libraries(${PROJECT_NAME} PRIVATE littl)
+
+## Glacius Remote Control Console
+
+add_executable(GlaciusRCC RCC/src/main.cpp)
+
+add_dependencies(GlaciusRCC littl)
+target_link_libraries(GlaciusRCC PRIVATE littl)

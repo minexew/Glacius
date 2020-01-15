@@ -1,5 +1,6 @@
 .idea/
 bin/Glacius
+bin/GlaciusRCC
 bin/glacius.cfx2
 bin/realm.db
 cmake-build-debug/

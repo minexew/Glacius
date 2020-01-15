@@ -7,6 +7,7 @@
 #include <littl.hpp>
 
 #include "Config.hpp"
+#include "IOUtil.hpp"
 #include "LoginServer.hpp"
 #include "StatusServer.hpp"
 #include "WorldServer.hpp"
@@ -82,7 +83,7 @@ static void run( const String& configFile )
         printf( "-------------------------------------------------------------------------------\n\n" );
         printf( "\n" );
 
-        while ( true )
+        while ( IOUtil::isStdoutATty() )
         {
             List<String> tokens;
 
@@ -191,6 +192,10 @@ static void run( const String& configFile )
                 console.writeLine( " -- COMMAND UNRECOGNIZED: " + tokens[0] );
         }
 
+        while ( !IOUtil::isStdoutATty() ) {
+            IOUtil::waitForSignal();
+        }
+
         printf( "## TERM: waiting for all threads to stop...\n" );
 
         if ( status )
@@ -218,6 +223,9 @@ static void run( const String& configFile )
 
 int main( int argc, char** argv )
 {
+    // disable stdout buffering since we abuse it for stderr
+    IOUtil::disableStdoutBuffering();
+
 #if defined( _DEBUG ) && defined( _MSC_VER )
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     _CrtSetBreakAlloc( 428 );

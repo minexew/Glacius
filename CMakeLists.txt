@@ -15,6 +15,8 @@ set(SRC
         src/Database.cpp
         src/Database.hpp
         src/Glacius.cpp
+        src/IOUtil.cpp
+        src/IOUtil.hpp
         src/LoginServer.cpp
         src/LoginServer.hpp
         src/StatusServer.cpp

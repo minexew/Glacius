@@ -55,6 +55,8 @@ namespace Glacius
         TcpSocket* session;
         unsigned pid;
 
+        Database& db;
+
         CharacterProperties props;
 
         void sendWelcome();
@@ -62,7 +64,7 @@ namespace Glacius
         friend class WorldServer;
 
         public:
-            WorldServerSession( TcpSocket* conn, int charID );
+            WorldServerSession( TcpSocket* conn, int charID, Database& db );
             virtual ~WorldServerSession();
 
             const String& getName() const;

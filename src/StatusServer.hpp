@@ -13,9 +13,10 @@ namespace Glacius
     class StatusServer : public Thread
     {
         TcpSocket* listener;
+        Database& db;
 
         public:
-            StatusServer(Config& config);
+            StatusServer(Config& config, Database& db);
             virtual ~StatusServer();
 
             virtual void run();
@@ -24,9 +25,10 @@ namespace Glacius
     class StatusServerSession : public Thread
     {
         TcpSocket* session;
+        Database& db;
 
         public:
-            StatusServerSession( TcpSocket* conn );
+            StatusServerSession( TcpSocket* conn, Database& db );
             virtual ~StatusServerSession();
 
             void listPlayers();

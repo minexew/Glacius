@@ -11,7 +11,7 @@
 
 namespace Glacius
 {
-    Database* dbGlobal = 0;
+    using std::make_unique;
 
     inline String escape( String input )
     {
@@ -40,18 +40,18 @@ namespace Glacius
     {
     }
 
-    Database* Database::create(Config& config)
+    unique_ptr<Database> Database::create(Config& config)
     {
         String protocol = config.getOption( "Database.protocol" );
 
 #ifdef Driver_MySQL_mysql
         if ( protocol == "mysql" )
-            return new MySqlDatabase(config);
+            return make_unique<MySqlDatabase>(config);
         else
 #endif
 #ifdef Driver_SQLite_sqlite
         if ( protocol == "sqlite" )
-            return new SqliteDatabase(config);
+            return make_unique<SqliteDatabase>(config);
         else
 #endif
             throw Exception( "Glacius.Database.UnknownProtocol", "Unknown database protocol " + protocol );

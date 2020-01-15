@@ -12,7 +12,7 @@ namespace Glacius
 
     LoginServer* loginGlobal = 0;
 
-    LoginServer::LoginServer(Config& config) : nextId( 1 ), down( false )
+    LoginServer::LoginServer(Config& config, Database& db) : nextId( 1 ), down( false ), db(db)
     {
         listener = TcpSocket::create( false );
 
@@ -77,7 +77,7 @@ namespace Glacius
                     }
                     else
                     {
-                        LoginServerSession* session = new LoginServerSession( incoming, nextId++ );
+                        LoginServerSession* session = new LoginServerSession( incoming, nextId++, db );
                         session->start();
                     }
 
@@ -94,8 +94,8 @@ namespace Glacius
         }
     }
 
-    LoginServerSession::LoginServerSession( TcpSocket* conn, int id )
-        : session( conn ), id( id ), accountID( -1 )
+    LoginServerSession::LoginServerSession( TcpSocket* conn, int id, Database& db )
+        : session( conn ), id( id ), accountID( -1 ), db(db)
     {
         printf( "[T_LS_%i] Construction (remote IP: %s)\n", id, session->getPeerIP() );
         destroyOnExit();
@@ -142,8 +142,8 @@ namespace Glacius
                     }
 
                     buffer.writeString( "login.server_info" );
-                    buffer.writeString( dbGlobal->getConfigOption( "RealmName" ) );
-                    buffer.writeString( dbGlobal->getConfigOption( "RealmMotd" ) );
+                    buffer.writeString( db.getConfigOption( "RealmName" ) );
+                    buffer.writeString( db.getConfigOption( "RealmMotd" ) );
 
                     session->send( buffer );
                 }
@@ -157,7 +157,7 @@ namespace Glacius
                     printf( "[T_LS_%i] Login request. Username %s.\n", id, username.c_str() );
                     buffer.clear();
 
-                    accountID = dbGlobal->login( username, password, result );
+                    accountID = db.login( username, password, result );
 
                     if ( accountID >= 0 )
                         buffer.writeString( "result.ok" );
@@ -190,7 +190,7 @@ namespace Glacius
                         continue;
                     }
 
-                    accountID = dbGlobal->createAccount( username, password, result );
+                    accountID = db.createAccount( username, password, result );
 
                     if ( accountID >= 0 )
                         buffer.writeString( "result.ok" );
@@ -260,7 +260,7 @@ namespace Glacius
                     // create the characters
 
                     CharacterCreationInfo creation = { name, race };
-                    int charID = dbGlobal->createCharacter( accountID, creation, result );
+                    int charID = db.createCharacter( accountID, creation, result );
 
                     // send response
 
@@ -301,7 +301,7 @@ namespace Glacius
                     session->send( buffer );
 
                     printf( "[T_LS_%i] Entering world with character #%i!!\n", id, charIDs[charIndex] );
-                    WorldServerSession* wss = new WorldServerSession( session, charIDs[charIndex] );
+                    WorldServerSession* wss = new WorldServerSession( session, charIDs[charIndex], db );
                     wss->start();
 
                     session = 0;
@@ -327,7 +327,7 @@ namespace Glacius
         buffer.writeString( "login.character_info" );
 
         CharacterSummary chars[5];
-        int count = dbGlobal->getCharacterList( accountID, chars );
+        int count = db.getCharacterList( accountID, chars );
 
         buffer.write<uint16_t>( count );
 

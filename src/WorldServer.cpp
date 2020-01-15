@@ -237,10 +237,10 @@ namespace Glacius
         buffer.write<float>( props.orientation );
     }
 
-    WorldServerSession::WorldServerSession( TcpSocket* conn, int charID )
-        : session( conn )
+    WorldServerSession::WorldServerSession( TcpSocket* conn, int charID, Database& db )
+        : session( conn ), db( db )
     {
-        dbGlobal->loadCharacter( charID, &props );
+        db.loadCharacter( charID, &props );
         pid = worldGlobal->registerSession( this, props );
 
         printf( "[T_WS_%i] Entering world.\n", pid );
@@ -362,7 +362,9 @@ namespace Glacius
         }
 
         worldGlobal->unregisterSession( pid, props );
-        dbGlobal->saveCharacter( &props );
+
+        printf( "[T_WS_%i] Saving character %s\n", pid, props.name.c_str() );
+        db.saveCharacter( &props );
 
         // Even after unregistering, some iterating methods may still hold the session pointer
         pauseThread( 100 );

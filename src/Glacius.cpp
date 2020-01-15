@@ -36,10 +36,11 @@ static void run( const char* configFile )
         Config config( configFile );
 
         printf( "## creating database session...\n" );
-        dbGlobal = Database::create(config);
+        auto the_db = Database::create(config);
+        auto& db = *the_db;
 
         printf( "## starting Login Server\n" );
-        loginGlobal = new LoginServer(config);
+        loginGlobal = new LoginServer(config, db);
         loginGlobal->start();
         pauseThread( 200 );
 
@@ -53,7 +54,7 @@ static void run( const char* configFile )
         if ( config.getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
-            status = new StatusServer(config);
+            status = new StatusServer(config, db);
             status->start();
             pauseThread( 200 );
         }
@@ -114,7 +115,7 @@ static void run( const char* configFile )
                 {
                     try
                     {
-                        String value = dbGlobal->getConfigOption( tokens[i] );
+                        String value = db.getConfigOption( tokens[i] );
                         printf( "%s = '%s'\n", tokens[i].c_str(), value.c_str() );
                     }
                     catch ( Exception ex )
@@ -147,7 +148,7 @@ static void run( const char* configFile )
                     for ( unsigned i = 2; i < tokens.getLength(); i++ )
                         script = script.replaceAll( ( String )"$" + ( i - 2 ), tokens[i] );
 
-                    dbGlobal->executeCommand( script );
+                    db.executeCommand( script );
                 }
             }
             else if ( tokens[0] == "kickall" )
@@ -171,14 +172,14 @@ static void run( const char* configFile )
                     console.writeLine( playerList.current() );
             }
             else if ( tokens[0] == "query" )
-                dbGlobal->executeCommand( tokens[1] );
+                db.executeCommand( tokens[1] );
             else if ( tokens[0] == "restart" )
             {
                 restart = true;
                 break;
             }
             else if ( tokens[0] == "set" )
-                dbGlobal->setConfigOption( tokens[1], tokens[2] );
+                db.setConfigOption( tokens[1], tokens[2] );
             else if ( tokens[0] == "svmsg" )
                 worldGlobal->serverMessage( tokens[1] );
             else if ( tokens[0] == "up" )
@@ -206,9 +207,8 @@ static void run( const char* configFile )
         pauseThread( 500 );
         printf( "## TERM: killing all remaining threads...\n" );
 
-        printf( "debug: Deleting `dbGlobal`...\n" );
-        delete dbGlobal;
-
+        // FIXME: this will break all hell if the threads are not stopped
+        the_db.reset();
         config.commit();
 
         printf( "Server shutdown successful.\n\n\n" );

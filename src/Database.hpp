@@ -6,14 +6,15 @@
 #include <littl.hpp>
 #include <littl/cfx2.hpp>
 
+#include <memory>
+
 namespace Glacius
 {
     using namespace li;
+    using std::unique_ptr;
 
     class Config;
     class Database;
-
-    extern Database* dbGlobal;
 
     struct DbOpResult
     {
@@ -44,7 +45,7 @@ namespace Glacius
         public:
             virtual ~Database() = 0;
 
-            static Database* create(Config& config);
+            static unique_ptr<Database> create(Config& config);
 
             virtual int executeCommand( const char* text ) = 0;
             virtual String getConfigOption( const char* name ) = 0;

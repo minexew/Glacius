@@ -5,7 +5,7 @@
 
 namespace Glacius
 {
-    StatusServer::StatusServer(Config& config)
+    StatusServer::StatusServer(Config& config, Database& db) : db(db)
     {
         int port = config.getOption( "StatusServer/port" ).toInt();
         listener = TcpSocket::create( false );
@@ -35,7 +35,7 @@ namespace Glacius
 
                 if ( incoming )
                 {
-                    StatusServerSession* session = new StatusServerSession( incoming );
+                    StatusServerSession* session = new StatusServerSession( incoming, db );
                     session->start();
                 }
                 else
@@ -49,7 +49,7 @@ namespace Glacius
         }
     }
 
-    StatusServerSession::StatusServerSession( TcpSocket* conn ) : session( conn )
+    StatusServerSession::StatusServerSession( TcpSocket* conn, Database& db ) : session( conn ), db(db)
     {
         session->setBlocking( true );
         destroyOnExit();
@@ -110,7 +110,7 @@ namespace Glacius
             {
                 session->write( "HTTP/1.1 301 Moved Permanently\r\n" );
                 session->write( "Content-Length: 0\r\n" );
-                session->write( "Location: " + dbGlobal->getConfigOption( "RealmWebsite" ) + "\r\n" );
+                session->write( "Location: " + db.getConfigOption( "RealmWebsite" ) + "\r\n" );
                 session->write( "\r\n" );
             }
             else
@@ -122,7 +122,7 @@ namespace Glacius
     {
         String reason;
 
-        String payload = "RealmName: " + dbGlobal->getConfigOption( "RealmName" ) + "\n";
+        String payload = "RealmName: " + db.getConfigOption( "RealmName" ) + "\n";
 
         if ( loginGlobal->isDown( reason ) )
         {

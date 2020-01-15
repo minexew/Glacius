@@ -58,15 +58,7 @@ namespace Glacius
         {
             while ( !shouldEnd )
             {
-                PerfTimer tm;
-                auto start = tm.getCurrentMicros();
-
                 TcpSocket* incoming = listener->accept( false );
-
-                unsigned bcastTime = tm.getCurrentMicros() - start;
-
-                if ( bcastTime > 1000 )
-                    printf( "WARNING: listener->accept() [%u us]\n", bcastTime );
 
                 if ( incoming )
                 {

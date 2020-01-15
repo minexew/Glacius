@@ -214,7 +214,7 @@ namespace Glacius
 
     int MySqlDatabase::loadCharacter( int charID, CharacterProperties* output )
     {
-        String query = ( String )"SELECT CharID, Name, Race, Class, Level, AreaName, ZoneName, Zone, x, y, z, orientation, Gold"
+        String query = ( String )"SELECT CharID, Name, Race, Class, Level, AreaName, ZoneName, Characters.Zone, x, y, z, orientation, Gold"
                 " FROM Characters LEFT JOIN ZoneNames ON ZoneNames.Zone = Characters.Zone WHERE CharID = '" + charID + "'";
 
         if ( !BS_query( 0, query ) )

@@ -6,6 +6,7 @@ namespace Glacius
 {
     using namespace li;
 
+    class Config;
     class LoginServer;
 
     extern LoginServer* loginGlobal;
@@ -19,7 +20,7 @@ namespace Glacius
         String reason;
 
         public:
-            LoginServer();
+            LoginServer(Config& config);
             virtual ~LoginServer();
 
             bool isDown( String& why );

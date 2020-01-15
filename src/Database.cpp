@@ -40,18 +40,18 @@ namespace Glacius
     {
     }
 
-    Database* Database::create()
+    Database* Database::create(Config& config)
     {
-        String protocol = confGlobal->getOption( "Database.protocol" );
+        String protocol = config.getOption( "Database.protocol" );
 
 #ifdef Driver_MySQL_mysql
         if ( protocol == "mysql" )
-            return new MySqlDatabase();
+            return new MySqlDatabase(config);
         else
 #endif
 #ifdef Driver_SQLite_sqlite
         if ( protocol == "sqlite" )
-            return new SqliteDatabase();
+            return new SqliteDatabase(config);
         else
 #endif
             throw Exception( "Glacius.Database.UnknownProtocol", "Unknown database protocol " + protocol );
@@ -62,12 +62,12 @@ namespace Glacius
     // *********************************************************************
 #ifdef Driver_MySQL_mysql
 
-    MySqlDatabase::MySqlDatabase()
+    MySqlDatabase::MySqlDatabase(Config& config)
     {
-        String host = confGlobal->getOption( "Database/host" );
-        String username = confGlobal->getOption( "Database/username" );
-        String pass = confGlobal->getOption( "Database/pass" );
-        String db = confGlobal->getOption( "Database/db" );
+        String host = config.getOption( "Database/host" );
+        String username = config.getOption( "Database/username" );
+        String pass = config.getOption( "Database/pass" );
+        String db = config.getOption( "Database/db" );
 
         if ( !BS_connect( host, username, pass, db ) )
             throw Exception( "Glacius.MySqlDatabase.DbError", BS_error() );
@@ -258,9 +258,9 @@ namespace Glacius
     //  Glacius::SqliteDatabase
     // *********************************************************************
 
-    SqliteDatabase::SqliteDatabase() : db( 0 )
+    SqliteDatabase::SqliteDatabase(Config& config) : db( 0 )
     {
-        String fileName = confGlobal->getOption( "Database/fileName" );
+        String fileName = config.getOption( "Database/fileName" );
 
         if ( sqlite3_open( fileName, &db ) )
         {

@@ -10,6 +10,7 @@ namespace Glacius
 {
     using namespace li;
 
+    class Config;
     class Database;
 
     extern Database* dbGlobal;
@@ -43,7 +44,7 @@ namespace Glacius
         public:
             virtual ~Database() = 0;
 
-            static Database* create();
+            static Database* create(Config& config);
 
             virtual int executeCommand( const char* text ) = 0;
             virtual String getConfigOption( const char* name ) = 0;
@@ -61,7 +62,7 @@ namespace Glacius
     class MySqlDatabase : public Database
     {
         public:
-            MySqlDatabase();
+            MySqlDatabase(Config& config);
             virtual ~MySqlDatabase();
 
             virtual int executeCommand( const char* text );
@@ -84,7 +85,7 @@ namespace Glacius
         void requireQuery( const char* query, int ( *callback )( void*, int, char**, char** ) = 0, void* param = 0 );
 
         public:
-            SqliteDatabase();
+            SqliteDatabase(Config& config);
             virtual ~SqliteDatabase();
 
             virtual int executeCommand( const char* text );

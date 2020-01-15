@@ -4,11 +4,9 @@
 
 namespace Glacius
 {
-    Config* confGlobal = 0;
-
     static const char* defaultsFileName = "glacius.default.cfx2";
 
-    Config::Config( const String& fileName ) : fileName( fileName )
+    Config::Config( const char* fileName ) : fileName( fileName )
     {
         configDoc = cfx2_load_document( fileName );
 
@@ -25,8 +23,12 @@ namespace Glacius
 
     Config::~Config()
     {
-        cfx2_save_document( configDoc, fileName );
         cfx2_release_node( configDoc );
+    }
+
+    void Config::commit()
+    {
+        cfx2_save_document( configDoc, fileName.c_str() );
     }
 
     /*cfx2::Node& Config::getNode( const char* path )

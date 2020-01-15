@@ -8,12 +8,14 @@ namespace Glacius
 {
     using namespace li;
 
+    class Config;
+
     class StatusServer : public Thread
     {
         TcpSocket* listener;
 
         public:
-            StatusServer();
+            StatusServer(Config& config);
             virtual ~StatusServer();
 
             virtual void run();

@@ -28,18 +28,18 @@ static void syncPlayer( unsigned pid, const String& name, unsigned interval, flo
     syncMutex.leave();
 }
 
-static void run( const String& configFile )
+static void run( const char* configFile )
 {
     try
     {
-        printf( "## reading configuration file: %s\n", configFile.c_str() );
-        confGlobal = new Config( configFile );
+        printf( "## reading configuration file: %s\n", configFile );
+        Config config( configFile );
 
         printf( "## creating database session...\n" );
-        dbGlobal = Database::create();
+        dbGlobal = Database::create(config);
 
         printf( "## starting Login Server\n" );
-        loginGlobal = new LoginServer();
+        loginGlobal = new LoginServer(config);
         loginGlobal->start();
         pauseThread( 200 );
 
@@ -50,15 +50,15 @@ static void run( const String& configFile )
 
         StatusServer* status = 0;
 
-        if ( confGlobal->getOption( "StatusServer/enabled", true ).toInt() )
+        if ( config.getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
-            status = new StatusServer();
+            status = new StatusServer(config);
             status->start();
             pauseThread( 200 );
         }
 
-        if ( confGlobal->getOption( "Server/isConfigured", true ).isEmpty() )
+        if ( config.getOption( "Server/isConfigured", true ).isEmpty() )
         {
             loginGlobal->setStatus( true, "Initial configuration." );
 
@@ -74,7 +74,7 @@ static void run( const String& configFile )
             console.writeLine( "## Press enter to start!" );
             console.readLine();
 
-            confGlobal->setOption( "Server/isConfigured", "1" );
+            config.setOption( "Server/isConfigured", "1" );
         }
 
         printf( "\n\n-------------------------------------------------------------------------------\n" );
@@ -209,8 +209,7 @@ static void run( const String& configFile )
         printf( "debug: Deleting `dbGlobal`...\n" );
         delete dbGlobal;
 
-        printf( "debug: Deleting `confGlobal`...\n" );
-        delete confGlobal;
+        config.commit();
 
         printf( "Server shutdown successful.\n\n\n" );
         pauseThread( 500 );

@@ -5,9 +5,9 @@
 
 namespace Glacius
 {
-    StatusServer::StatusServer()
+    StatusServer::StatusServer(Config& config)
     {
-        int port = confGlobal->getOption( "StatusServer/port" ).toInt();
+        int port = config.getOption( "StatusServer/port" ).toInt();
         listener = TcpSocket::create( false );
 
         if ( !listener || !listener->listen( port ) )

@@ -12,11 +12,11 @@ namespace Glacius
 
     LoginServer* loginGlobal = 0;
 
-    LoginServer::LoginServer() : nextId( 1 ), down( false )
+    LoginServer::LoginServer(Config& config) : nextId( 1 ), down( false )
     {
         listener = TcpSocket::create( false );
 
-        if ( !listener || !listener->listen( confGlobal->getOption( "LoginServer/port" ).toInt() ) )
+        if ( !listener || !listener->listen( config.getOption( "LoginServer/port" ).toInt() ) )
             throw Exception( "Glacius.LoginServer.StartupFailure", "Login Server startup failed (port already in use?)" );
 
         destroyOnExit();

@@ -5,6 +5,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
+add_subdirectory(dependencies/BlueShine)
 add_subdirectory(dependencies/libcfx2)
 add_subdirectory(dependencies/littl)
 
@@ -29,6 +30,10 @@ add_executable(${PROJECT_NAME} ${SRC})
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE -DSQLITE_OMIT_LOAD_EXTENSION=1)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
+
+# BlueShine
+add_dependencies(${PROJECT_NAME} BlueShine)
+target_link_libraries(${PROJECT_NAME} PRIVATE BlueShine)
 
 # libcfx2-0.8
 add_dependencies(${PROJECT_NAME} cfx2_08)

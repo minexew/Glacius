@@ -2,7 +2,7 @@
 #include "Config.hpp"
 #include "Database.hpp"
 
-//#define Driver_MySQL_mysql
+#define Driver_MySQL_mysql
 #define Driver_SQLite_sqlite
 
 #ifdef Driver_MySQL_mysql
@@ -62,28 +62,17 @@ namespace Glacius
     // *********************************************************************
 #ifdef Driver_MySQL_mysql
 
-    MySqlDatabase::MySqlDatabase( cfx2::Node& options )
+    MySqlDatabase::MySqlDatabase()
     {
-        const char* host, * username, * pass, * db;
-
-        if ( options.
-
-        if ( cfx2_get_node_attrib( options, "host", &host ) )
-            throw Exception( "Glacius.MySqlDatabase.MissingOption", "Missing option 'host'" );
-
-        if ( cfx2_get_node_attrib( options, "username", &username ) )
-            throw Exception( "Glacius.MySqlDatabase.MissingOption", "Missing option 'username'" );
-
-        if ( cfx2_get_node_attrib( options, "pass", &pass ) )
-            throw Exception( "Glacius.MySqlDatabase.MissingOption", "Missing option 'pass'" );
-
-        if ( cfx2_get_node_attrib( options, "db", &db ) )
-            throw Exception( "Glacius.MySqlDatabase.MissingOption", "Missing option 'db'" );
+        String host = confGlobal->getOption( "Database/host" );
+        String username = confGlobal->getOption( "Database/username" );
+        String pass = confGlobal->getOption( "Database/pass" );
+        String db = confGlobal->getOption( "Database/db" );
 
         if ( !BS_connect( host, username, pass, db ) )
             throw Exception( "Glacius.MySqlDatabase.DbError", BS_error() );
 
-        printf( "[MySqlDatabase] Using database `%s` @ `%s`\n", db, host );
+        printf( "[MySqlDatabase] Using database `%s` @ `%s`\n", db.c_str(), host.c_str() );
     }
 
     MySqlDatabase::~MySqlDatabase()

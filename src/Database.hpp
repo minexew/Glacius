@@ -61,7 +61,7 @@ namespace Glacius
     class MySqlDatabase : public Database
     {
         public:
-            MySqlDatabase( cfx2_Node* options );
+            MySqlDatabase();
             virtual ~MySqlDatabase();
 
             virtual int executeCommand( const char* text );

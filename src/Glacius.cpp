@@ -48,8 +48,8 @@ static void run( const char* configFile )
         pauseThread( 200 );
 
         printf( "## starting World Server\n" );
-        worldGlobal = new WorldServer(broker, db);
-        worldGlobal->start();
+        WorldServer world(broker, db);
+        world.start();
         pauseThread( 200 );
 
         StatusServer* status = 0;
@@ -57,7 +57,7 @@ static void run( const char* configFile )
         if ( config.getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
-            status = new StatusServer(config, db, login);
+            status = new StatusServer(broker, config, db, login);
             status->start();
             pauseThread( 200 );
         }
@@ -155,7 +155,7 @@ static void run( const char* configFile )
                 }
             }
             else if ( tokens[0] == "kickall" )
-                worldGlobal->removeAllPlayers();
+                world.removeAllPlayers();
             else if ( tokens[0] == "ls" )
             {
                 unsigned interval = 5000;
@@ -166,11 +166,11 @@ static void run( const char* configFile )
                 console.writeLine( ( String )" -- " + ( interval / 1000.0f ) + " s to sync" );
 
                 playerList.clear();
-                worldGlobal->beginSync( syncPlayer );
+                world.beginSync( syncPlayer );
 
                 pauseThread( interval );
 
-                worldGlobal->endSync();
+                world.endSync();
                 iterate ( playerList )
                     console.writeLine( playerList.current() );
             }
@@ -184,14 +184,14 @@ static void run( const char* configFile )
             else if ( tokens[0] == "set" )
                 db.setConfigOption( tokens[1], tokens[2] );
             else if ( tokens[0] == "svmsg" )
-                worldGlobal->serverMessage( tokens[1] );
+                world.serverMessage( tokens[1] );
             else if ( tokens[0] == "up" )
             {
                 broker.publish<ServerStateChange>(ServerState::up, "");
                 console.writeLine( " -- Server is back up!" );
             }
             else if ( tokens[0] == "objspawn" )
-                worldGlobal->spawnWorldObj( tokens[1], tokens[2], tokens[3], tokens[4] );
+                world.spawnWorldObj( tokens[1], tokens[2], tokens[3], tokens[4] );
             else
                 console.writeLine( " -- COMMAND UNRECOGNIZED: " + tokens[0] );
         }
@@ -205,10 +205,11 @@ static void run( const char* configFile )
         if ( status )
             status->end();
 
-        worldGlobal->end();
+        world.end();
         login.end();
         pauseThread( 500 );
 
+        world.waitFor();
         login.waitFor();
 
         printf( "## TERM: killing all remaining threads...\n" );

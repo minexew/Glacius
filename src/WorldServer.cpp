@@ -11,13 +11,13 @@ using namespace GameClient;
 
 namespace Glacius
 {
-    WorldServer* worldGlobal = 0;
-
     WorldServer::WorldServer(PubSub::Broker& broker, Database& db) : numOnline( 0 ), onSync( 0 ), db(db), sub(broker, myPipe)
     {
-        sub.add<WorldEnterRequest>();
+        broker.publish<WorldStatusAnnouncement>(0);
 
-        destroyOnExit();
+        sub.add<Request<WorldStatusAnnouncement>>();
+        sub.add<CharacterListQuery>();
+        sub.add<WorldEnterRequest>();
     }
 
     WorldServer::~WorldServer()
@@ -71,15 +71,19 @@ namespace Glacius
         onSync = 0;
     }
 
-    void WorldServer::getPlayersOnline( List<String>& players )
+    std::vector<std::string> WorldServer::getPlayersOnline()
     {
+        std::vector<std::string> players_out;
+
         for ( unsigned i = 0; i < clients.getLength(); i++ )
         {
             WorldServerSession* client = clients[i];
 
             if ( client )
-                players.add( client->getName() );
+                players_out.push_back( client->getName().c_str() );
         }
+
+        return players_out;
     }
 
     void WorldServer::playerMoved( unsigned pid, CharacterProperties& props )
@@ -170,8 +174,14 @@ namespace Glacius
                 */
 
                 while ( auto msg = myPipe.poll() ) {
-                    if ( auto req = msg->cast<WorldEnterRequest>() ) {
-                        WorldServerSession* wss = new WorldServerSession(req->socket.release(), req->charID, db);
+                    if ( auto req = msg->cast<CharacterListQuery>() ) {
+                        req->promise.set_value(this->getPlayersOnline());
+                    }
+                    if ( auto req = msg->cast<Request<WorldStatusAnnouncement>>() ) {
+                        sub.getBroker().publish<WorldStatusAnnouncement>((int) clients.getLength());
+                    }
+                    else if ( auto req = msg->cast<WorldEnterRequest>() ) {
+                        WorldServerSession* wss = new WorldServerSession(req->socket.release(), req->charID, db, *this);
                         wss->start();
                     }
                 }
@@ -246,11 +256,11 @@ namespace Glacius
         buffer.write<float>( props.orientation );
     }
 
-    WorldServerSession::WorldServerSession( TcpSocket* conn, int charID, Database& db )
-        : session( conn ), db( db )
+    WorldServerSession::WorldServerSession( TcpSocket* conn, int charID, Database& db, WorldServer& world )
+        : session( conn ), db( db ), world(world)
     {
         db.loadCharacter( charID, &props );
-        pid = worldGlobal->registerSession( this, props );
+        pid = world.registerSession( this, props );
 
         printf( "[T_WS_%i] Entering world.\n", pid );
         destroyOnExit();
@@ -315,7 +325,7 @@ namespace Glacius
                             props.z = buffer.read<float>();
                             props.orientation = buffer.read<float>();
 
-                            worldGlobal->playerMoved( pid, props );
+                            world.playerMoved( pid, props );
                             break;
 
                         case world::say:
@@ -324,7 +334,7 @@ namespace Glacius
                             printf( "# %s: %s\n", props.name.c_str(), message.c_str() );
 
                             if ( !message.beginsWith( '/' ) )
-                                worldGlobal->broadcast( props, message );
+                                world.broadcast( props, message );
                             else
                             {
                                 List<String> tokens;
@@ -336,16 +346,16 @@ namespace Glacius
                                     if ( tokens[1] == "spawn" )
                                     {
                                         if ( !tokens[3].isEmpty() )
-                                            worldGlobal->spawnWorldObj( tokens[2], tokens[3], tokens[4], tokens[5] );
+                                            world.spawnWorldObj( tokens[2], tokens[3], tokens[4], tokens[5] );
                                         else
-                                            worldGlobal->spawnWorldObj( tokens[2], props.x, props.y, props.orientation );
+                                            world.spawnWorldObj( tokens[2], props.x, props.y, props.orientation );
                                     }
                                     else if ( tokens[1] == "remove" )
                                     {
                                         if ( !tokens[3].isEmpty() )
-                                            worldGlobal->removeWorldObj( tokens[2], tokens[3] );
+                                            world.removeWorldObj( tokens[2], tokens[3] );
                                         else
-                                            worldGlobal->removeWorldObj( props.x, props.y );
+                                            world.removeWorldObj( props.x, props.y );
                                     }
                                 }
                             }
@@ -353,7 +363,7 @@ namespace Glacius
                         }
 
                         case world::sync:
-                            worldGlobal->sync( pid, props );
+                            world.sync( pid, props );
                             break;
 
                         default:
@@ -370,7 +380,7 @@ namespace Glacius
             ex.print();
         }
 
-        worldGlobal->unregisterSession( pid, props );
+        world.unregisterSession( pid, props );
 
         printf( "[T_WS_%i] Saving character %s\n", pid, props.name.c_str() );
         db.saveCharacter( &props );

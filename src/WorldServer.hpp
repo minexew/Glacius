@@ -5,6 +5,9 @@
 
 #include <littl.hpp>
 
+#include <future>
+#include <vector>
+
 namespace Glacius
 {
     using namespace li;
@@ -14,14 +17,25 @@ namespace Glacius
     class WorldServer;
     class WorldServerSession;
 
-    extern WorldServer* worldGlobal;
-
     typedef void ( *SyncCallback )( unsigned pid, const String& name, unsigned interval, float x, float y );
+
+    template <typename T>
+    struct Request {};
+
+    struct CharacterListQuery
+    {
+        std::promise<std::vector<std::string>> promise;
+    };
 
     struct WorldEnterRequest
     {
         unique_ptr<TcpSocket> socket;
         int charID;
+    };
+
+    struct WorldStatusAnnouncement
+    {
+        int playersOnline;
     };
 
     class WorldServer : public Thread, public Mutex
@@ -51,7 +65,6 @@ namespace Glacius
             void broadcast( CharacterProperties& broadcaster, const String& message );
             void endSync();
             unsigned getNumOnline() const { return numOnline; }
-            void getPlayersOnline( List<String>& players );
             void playerMoved( unsigned pid, CharacterProperties& broadcaster );
             void removeAllPlayers();
             void removeWorldObj( float x, float y );
@@ -59,6 +72,9 @@ namespace Glacius
             void serverMessage( const String& message );
             void spawnWorldObj( const String& name, float x, float y, float o );
             void sync( unsigned pid, CharacterProperties& props );
+
+    private:
+        std::vector<std::string> getPlayersOnline();
     };
 
     class WorldServerSession : public Thread, public Mutex
@@ -75,12 +91,15 @@ namespace Glacius
         friend class WorldServer;
 
         public:
-            WorldServerSession( TcpSocket* conn, int charID, Database& db );
+            WorldServerSession( TcpSocket* conn, int charID, Database& db, WorldServer& world );
             virtual ~WorldServerSession();
 
             const String& getName() const;
             void send( const ArrayIOStream& buffer );
             virtual void run();
             void writePlayerListItem( ArrayIOStream& buffer );
+
+    private:
+        WorldServer& world;
     };
 }

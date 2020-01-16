@@ -1,11 +1,12 @@
 
 #include "Config.hpp"
+#include "LoginServer.hpp"
 #include "StatusServer.hpp"
 #include "WorldServer.hpp"
 
 namespace Glacius
 {
-    StatusServer::StatusServer(Config& config, Database& db, LoginServer& login) : db(db), login(login)
+    StatusServer::StatusServer(PubSub::Broker& broker, Config& config, Database& db, LoginServer& login) : db(db), login(login), sub(broker, myPipe)
     {
         int port = config.getOption( "StatusServer/port" ).toInt();
         listener = TcpSocket::create( false );
@@ -14,6 +15,9 @@ namespace Glacius
             throw Exception( "Glacius.StatusServer.StartFailure", ( String )"Status Server startup at port " + port + " failed" );
 
         destroyOnExit();
+
+        sub.add<WorldStatusAnnouncement>();
+        broker.publish<Request<WorldStatusAnnouncement>>();
     }
 
     StatusServer::~StatusServer()
@@ -31,11 +35,17 @@ namespace Glacius
         {
             while ( !shouldEnd )
             {
+                while ( auto msg = myPipe.poll() ) {
+                    if ( auto announcement = msg->cast<WorldStatusAnnouncement>() ) {
+                        worldStatus = *announcement;
+                    }
+                }
+
                 TcpSocket* incoming = listener->accept( false );
 
                 if ( incoming )
                 {
-                    StatusServerSession* session = new StatusServerSession( incoming, db, login );
+                    StatusServerSession* session = new StatusServerSession( incoming, sub.getBroker(), db, login, *this );
                     session->start();
                 }
                 else
@@ -49,7 +59,8 @@ namespace Glacius
         }
     }
 
-    StatusServerSession::StatusServerSession( TcpSocket* conn, Database& db, LoginServer& login ) : session( conn ), db(db), login(login)
+    StatusServerSession::StatusServerSession( TcpSocket* conn, PubSub::Broker& broker, Database& db, LoginServer& login, StatusServer& status )
+            : session( conn ), broker(broker), db(db), login(login), status_(status)
     {
         session->setBlocking( true );
         destroyOnExit();
@@ -65,12 +76,17 @@ namespace Glacius
     {
         List<String> players;
 
-        worldGlobal->getPlayersOnline( players );
+        std::promise<std::vector<std::string>> promise;
+        auto future = promise.get_future();
+
+        broker.publish<CharacterListQuery>(std::move(promise));
+        auto list = future.get();
 
         String payload;
 
-        iterate ( players )
-            payload += "Player: " + players.current() + "\n";
+        for ( auto characterName : list ) {
+            payload += ( String ) "Player: " + characterName.c_str() + "\n";
+        }
 
         session->write( "HTTP/1.1 200 OK\r\n" );
         session->write( ( String )"Content-Length: " + payload.getNumBytes() + "\r\n" );
@@ -132,7 +148,7 @@ namespace Glacius
         else
         {
             payload += "Status: online\n";
-            payload += ( String ) "Population: " + worldGlobal->getNumOnline();
+            payload += ( String ) "Population: " + status_.getNumPlayersOnline();
         }
 
         session->write( "HTTP/1.1 200 OK\r\n" );

@@ -12,8 +12,6 @@ namespace Glacius
         if ( !listener || !listener->listen( port ) )
             throw Exception( "Glacius.StatusServer.StartFailure", ( String )"Status Server startup at port " + port + " failed" );
 
-        destroyOnExit();
-
         sub.add<ServerStateChange>();
         sub.add<WorldStatusAnnouncement>();
         broker.publish<Request<WorldStatusAnnouncement>>();

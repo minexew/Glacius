@@ -15,6 +15,7 @@
 
 using namespace Glacius;
 using namespace li;
+using std::make_unique;
 
 static Console console;
 static bool restart;
@@ -52,12 +53,12 @@ static void run( const char* configFile )
         world.start();
         pauseThread( 200 );
 
-        StatusServer* status = 0;
+        unique_ptr<StatusServer> status;
 
         if ( config.getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
-            status = new StatusServer(broker, config, db);
+            status = make_unique<StatusServer>(broker, config, db);
             status->start();
             pauseThread( 200 );
         }
@@ -212,10 +213,16 @@ static void run( const char* configFile )
         login.end();
         pauseThread( 500 );
 
+        if ( status ) {
+            status->waitFor();
+        }
+
         world.waitFor();
         login.waitFor();
 
         printf( "## TERM: killing all remaining threads...\n" );
+
+        status.reset();
 
         // FIXME: this will break all hell if the threads are not stopped
         the_db.reset();

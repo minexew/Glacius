@@ -1,0 +1,37 @@
+version: "2.1"
+
+services:
+  gameserver:
+    image: glacius
+    volumes:
+      - ./glacius.cfx2:/srv/glacius/glacius.cfx2
+      - ./DB-r01.sql:/srv/glacius/schema.sql
+    ports:
+     - "80:80"
+     - "24897:24897"
+    depends_on:
+     - mariadb
+
+  mariadb:
+    image: mariadb:10.2
+    user: ${CURRENT_UID}
+    command: --log-error      # suppress InnoDB spam
+    environment:
+      - MYSQL_DATABASE=realm
+      - MYSQL_USER=glacius
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+     - "3306:3306"
+    volumes:
+     - ./mariadb-data:/var/lib/mysql:Z
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+     - PMA_HOST=mariadb
+     - PMA_USER=glacius
+     - PMA_PASSWORD=password
+    ports:
+     - "10081:80"
+

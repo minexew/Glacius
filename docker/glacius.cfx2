@@ -1,0 +1,15 @@
+Server
+  isConfigured: '1'
+
+LoginServer
+  port: '24897'
+
+StatusServer
+  enabled: '1'
+  port: '80'
+
+Database (protocol: 'mysql')
+  host: 'mariadb'
+  username: 'glacius'
+  pass: 'password'
+  db: 'realm'

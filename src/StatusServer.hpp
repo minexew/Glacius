@@ -14,20 +14,19 @@ namespace Glacius
 
     class Config;
     class Database;
-    class LoginServer;
     struct WorldStatusAnnouncement;
 
     class StatusServer : public Thread
     {
         TcpSocket* listener;
         Database& db;
-        LoginServer& login;
 
         public:
-            StatusServer(PubSub::Broker& broker, Config& config, Database& db, LoginServer& login);
+            StatusServer(PubSub::Broker& broker, Config& config, Database& db);
             virtual ~StatusServer();
 
             int getNumPlayersOnline() { return worldStatus.playersOnline; }
+            ServerStateChange getServerState() { return serverState; } // FIXME: this is NOT thread-safe!
 
             virtual void run();
 
@@ -35,7 +34,7 @@ namespace Glacius
         PubSub::Pipe myPipe;
         PubSub::Subscription sub;
 
-        // these are mostly incorrect (should start as nullopt)
+        // these are mostly incorrect (should start as nullopt, OR be required in constructor)
         ServerStateChange serverState {};
         WorldStatusAnnouncement worldStatus {};
     };
@@ -44,10 +43,9 @@ namespace Glacius
     {
         TcpSocket* session;
         Database& db;
-        LoginServer& login;
 
         public:
-            StatusServerSession( TcpSocket* conn, PubSub::Broker& broker, Database& db, LoginServer& login, StatusServer& status );
+            StatusServerSession( TcpSocket* conn, PubSub::Broker& broker, Database& db, StatusServer& status );
             virtual ~StatusServerSession();
 
             void listPlayers();

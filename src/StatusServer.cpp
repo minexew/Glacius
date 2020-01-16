@@ -1,12 +1,10 @@
 
 #include "Config.hpp"
-#include "LoginServer.hpp"
 #include "StatusServer.hpp"
-#include "WorldServer.hpp"
 
 namespace Glacius
 {
-    StatusServer::StatusServer(PubSub::Broker& broker, Config& config, Database& db, LoginServer& login) : db(db), login(login), sub(broker, myPipe)
+    StatusServer::StatusServer(PubSub::Broker& broker, Config& config, Database& db) : db(db), sub(broker, myPipe)
     {
         int port = config.getOption( "StatusServer/port" ).toInt();
         listener = TcpSocket::create( false );
@@ -16,6 +14,7 @@ namespace Glacius
 
         destroyOnExit();
 
+        sub.add<ServerStateChange>();
         sub.add<WorldStatusAnnouncement>();
         broker.publish<Request<WorldStatusAnnouncement>>();
     }
@@ -36,7 +35,10 @@ namespace Glacius
             while ( !shouldEnd )
             {
                 while ( auto msg = myPipe.poll() ) {
-                    if ( auto announcement = msg->cast<WorldStatusAnnouncement>() ) {
+                    if ( auto stateChange = msg->cast<ServerStateChange>() ) {
+                        serverState = *stateChange;
+                    }
+                    else if ( auto announcement = msg->cast<WorldStatusAnnouncement>() ) {
                         worldStatus = *announcement;
                     }
                 }
@@ -45,7 +47,7 @@ namespace Glacius
 
                 if ( incoming )
                 {
-                    StatusServerSession* session = new StatusServerSession( incoming, sub.getBroker(), db, login, *this );
+                    StatusServerSession* session = new StatusServerSession( incoming, sub.getBroker(), db, *this );
                     session->start();
                 }
                 else
@@ -59,8 +61,8 @@ namespace Glacius
         }
     }
 
-    StatusServerSession::StatusServerSession( TcpSocket* conn, PubSub::Broker& broker, Database& db, LoginServer& login, StatusServer& status )
-            : session( conn ), broker(broker), db(db), login(login), status_(status)
+    StatusServerSession::StatusServerSession( TcpSocket* conn, PubSub::Broker& broker, Database& db, StatusServer& status )
+            : session( conn ), broker(broker), db(db), status_(status)
     {
         session->setBlocking( true );
         destroyOnExit();
@@ -136,14 +138,14 @@ namespace Glacius
 
     void StatusServerSession::status()
     {
-        String reason;
-
         String payload = "RealmName: " + db.getConfigOption( "RealmName" ) + "\n";
 
-        if ( login.isDown( reason ) )
+        auto serverState = status_.getServerState();
+
+        if ( serverState.state == ServerState::down )
         {
             payload += "Status: down\n";
-            payload += "Reason: " + reason + "\n";
+            payload += ( String ) "Reason: " + serverState.reason.c_str() + "\n";
         }
         else
         {

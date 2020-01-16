@@ -57,7 +57,7 @@ static void run( const char* configFile )
         if ( config.getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
-            status = new StatusServer(broker, config, db, login);
+            status = new StatusServer(broker, config, db);
             status->start();
             pauseThread( 200 );
         }
@@ -79,6 +79,9 @@ static void run( const char* configFile )
             console.readLine();
 
             config.setOption( "Server/isConfigured", "1" );
+        }
+        else {
+            broker.publish<ServerStateChange>( ServerState::up, "" );
         }
 
         printf( "\n\n-------------------------------------------------------------------------------\n" );

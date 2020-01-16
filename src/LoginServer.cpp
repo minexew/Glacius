@@ -18,8 +18,6 @@ namespace Glacius
 
         if ( !listener || !listener->listen( config.getOption( "LoginServer/port" ).toInt() ) )
             throw Exception( "Glacius.LoginServer.StartupFailure", "Login Server startup failed (port already in use?)" );
-
-        destroyOnExit();
     }
 
     LoginServer::~LoginServer()

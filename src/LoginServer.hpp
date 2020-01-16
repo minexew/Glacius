@@ -12,8 +12,6 @@ namespace Glacius
     class Database;
     class LoginServer;
 
-    extern LoginServer* loginGlobal;
-
     class LoginServer : public Thread, Mutex
     {
         TcpSocket* listener;

@@ -42,8 +42,8 @@ static void run( const char* configFile )
         auto& db = *the_db;
 
         printf( "## starting Login Server\n" );
-        loginGlobal = new LoginServer(broker, config, db);
-        loginGlobal->start();
+        LoginServer login(broker, config, db);
+        login.start();
         pauseThread( 200 );
 
         printf( "## starting World Server\n" );
@@ -56,14 +56,14 @@ static void run( const char* configFile )
         if ( config.getOption( "StatusServer/enabled", true ).toInt() )
         {
             printf( "## starting Status Server\n" );
-            status = new StatusServer(config, db);
+            status = new StatusServer(config, db, login);
             status->start();
             pauseThread( 200 );
         }
 
         if ( config.getOption( "Server/isConfigured", true ).isEmpty() )
         {
-            loginGlobal->setStatus( true, "Initial configuration." );
+            login.setStatus( true, "Initial configuration." );
 
             console.write( "\n\n-------------------------------------------------------------------------------\n" );
             console.writeLine( "## Welcome to Glacius!" );
@@ -104,7 +104,7 @@ static void run( const char* configFile )
 
             if ( tokens[0] == "down" )
             {
-                loginGlobal->setStatus( true, tokens[1] );
+                login.setStatus( true, tokens[1] );
                 console.writeLine( " -- The server is now down for maintenance." );
             }
             else if ( tokens[0] == "exit" )
@@ -186,7 +186,7 @@ static void run( const char* configFile )
                 worldGlobal->serverMessage( tokens[1] );
             else if ( tokens[0] == "up" )
             {
-                loginGlobal->setStatus( false );
+                login.setStatus( false );
                 console.writeLine( " -- Server is back up!" );
             }
             else if ( tokens[0] == "objspawn" )
@@ -205,8 +205,11 @@ static void run( const char* configFile )
             status->end();
 
         worldGlobal->end();
-        loginGlobal->end();
+        login.end();
         pauseThread( 500 );
+
+        login.waitFor();
+
         printf( "## TERM: killing all remaining threads...\n" );
 
         // FIXME: this will break all hell if the threads are not stopped

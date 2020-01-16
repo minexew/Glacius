@@ -5,7 +5,7 @@
 
 namespace Glacius
 {
-    StatusServer::StatusServer(Config& config, Database& db) : db(db)
+    StatusServer::StatusServer(Config& config, Database& db, LoginServer& login) : db(db), login(login)
     {
         int port = config.getOption( "StatusServer/port" ).toInt();
         listener = TcpSocket::create( false );
@@ -35,7 +35,7 @@ namespace Glacius
 
                 if ( incoming )
                 {
-                    StatusServerSession* session = new StatusServerSession( incoming, db );
+                    StatusServerSession* session = new StatusServerSession( incoming, db, login );
                     session->start();
                 }
                 else
@@ -49,7 +49,7 @@ namespace Glacius
         }
     }
 
-    StatusServerSession::StatusServerSession( TcpSocket* conn, Database& db ) : session( conn ), db(db)
+    StatusServerSession::StatusServerSession( TcpSocket* conn, Database& db, LoginServer& login ) : session( conn ), db(db), login(login)
     {
         session->setBlocking( true );
         destroyOnExit();
@@ -124,7 +124,7 @@ namespace Glacius
 
         String payload = "RealmName: " + db.getConfigOption( "RealmName" ) + "\n";
 
-        if ( loginGlobal->isDown( reason ) )
+        if ( login.isDown( reason ) )
         {
             payload += "Status: down\n";
             payload += "Reason: " + reason + "\n";

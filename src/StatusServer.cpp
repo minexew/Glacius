@@ -76,7 +76,7 @@ namespace Glacius
     {
         List<String> players;
 
-        std::promise<std::vector<std::string>> promise;
+        std::promise<std::vector<CharacterListQuery::Entry>> promise;
         auto future = promise.get_future();
 
         broker.publish<CharacterListQuery>(std::move(promise));
@@ -84,8 +84,8 @@ namespace Glacius
 
         String payload;
 
-        for ( auto characterName : list ) {
-            payload += ( String ) "Player: " + characterName.c_str() + "\n";
+        for ( auto& entry : list ) {
+            payload += ( String ) "Player: " + entry.characterName.c_str() + "\n";
         }
 
         session->write( "HTTP/1.1 200 OK\r\n" );

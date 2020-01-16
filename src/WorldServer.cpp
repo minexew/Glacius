@@ -11,7 +11,7 @@ using namespace GameClient;
 
 namespace Glacius
 {
-    WorldServer::WorldServer(PubSub::Broker& broker, Database& db) : numOnline( 0 ), onSync( 0 ), db(db), sub(broker, myPipe)
+    WorldServer::WorldServer(PubSub::Broker& broker, Database& db) : numOnline( 0 ), db(db), sub(broker, myPipe)
     {
         broker.publish<WorldStatusAnnouncement>(0);
 
@@ -23,17 +23,6 @@ namespace Glacius
     WorldServer::~WorldServer()
     {
         printf( "[T_WS] World Server shutdown: ok\n" );
-    }
-
-    void WorldServer::beginSync( SyncCallback callback )
-    {
-        onSync = callback;
-
-        ArrayIOStream buffer;
-        buffer.write<uint16_t>( world::sync_rq );
-
-        syncBegin = clock();
-        broadcast( buffer, invalidPid );
     }
 
     void WorldServer::broadcast( const ArrayIOStream& buffer, unsigned excludePid )
@@ -66,21 +55,16 @@ namespace Glacius
         broadcast( buffer, invalidPid );
     }
 
-    void WorldServer::endSync()
+    std::vector<CharacterListQuery::Entry> WorldServer::getPlayersOnline()
     {
-        onSync = 0;
-    }
-
-    std::vector<std::string> WorldServer::getPlayersOnline()
-    {
-        std::vector<std::string> players_out;
+        std::vector<CharacterListQuery::Entry> players_out;
 
         for ( unsigned i = 0; i < clients.getLength(); i++ )
         {
             WorldServerSession* client = clients[i];
 
             if ( client )
-                players_out.push_back( client->getName().c_str() );
+                players_out.push_back( {(int) client->pid, client->getName().c_str(), Vec3f {client->props.x, client->props.y, client->props.z}} );
         }
 
         return players_out;
@@ -140,6 +124,9 @@ namespace Glacius
         }
 
         session->send( listPlayersBuf );
+
+        // Announce onto message bus
+        sub.getBroker().publish<WorldStatusAnnouncement>((int) clients.getLength());
 
         return pid;
     }
@@ -219,14 +206,6 @@ namespace Glacius
         buffer.write<float>( o );
 
         broadcast( buffer, invalidPid );
-    }
-
-    void WorldServer::sync( unsigned pid, CharacterProperties& props )
-    {
-        if ( onSync )
-            onSync( pid, props.name, clock() - syncBegin, props.x, props.y );
-        else
-            printf( "Warning: sync message when sync not running (pid %u)\n", pid );
     }
 
     void WorldServer::unregisterSession( unsigned pid, CharacterProperties& props )
@@ -363,7 +342,7 @@ namespace Glacius
                         }
 
                         case world::sync:
-                            world.sync( pid, props );
+                            // TODO: update ping
                             break;
 
                         default:

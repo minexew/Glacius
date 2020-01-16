@@ -17,14 +17,21 @@ namespace Glacius
     class WorldServer;
     class WorldServerSession;
 
-    typedef void ( *SyncCallback )( unsigned pid, const String& name, unsigned interval, float x, float y );
-
     template <typename T>
     struct Request {};
 
+    struct Vec3f { float x, y, z; };
+
     struct CharacterListQuery
     {
-        std::promise<std::vector<std::string>> promise;
+        struct Entry {
+            int pid;
+            std::string characterName;
+            //ping;
+            Vec3f worldPos;
+        };
+
+        std::promise<std::vector<Entry>> promise;
     };
 
     struct WorldEnterRequest
@@ -44,7 +51,6 @@ namespace Glacius
         unsigned numOnline;
 
         clock_t syncBegin;
-        SyncCallback onSync;
 
         Database& db;
         PubSub::Pipe myPipe;
@@ -61,20 +67,16 @@ namespace Glacius
             WorldServer(PubSub::Broker& broker, Database& db);
             virtual ~WorldServer();
 
-            void beginSync( SyncCallback callback );
             void broadcast( CharacterProperties& broadcaster, const String& message );
-            void endSync();
-            unsigned getNumOnline() const { return numOnline; }
             void playerMoved( unsigned pid, CharacterProperties& broadcaster );
             void removeAllPlayers();
             void removeWorldObj( float x, float y );
             virtual void run();
             void serverMessage( const String& message );
             void spawnWorldObj( const String& name, float x, float y, float o );
-            void sync( unsigned pid, CharacterProperties& props );
 
     private:
-        std::vector<std::string> getPlayersOnline();
+        std::vector<CharacterListQuery::Entry> getPlayersOnline();
     };
 
     class WorldServerSession : public Thread, public Mutex

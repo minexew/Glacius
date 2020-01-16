@@ -20,16 +20,6 @@ using std::make_unique;
 static Console console;
 static bool restart;
 
-static List<String> playerList;
-static Mutex syncMutex;
-
-static void syncPlayer( unsigned pid, const String& name, unsigned interval, float x, float y )
-{
-    syncMutex.enter();
-    playerList.add( ( String )"[" + pid + "] '" + name + "' sync delta = " + interval + " ms; world coords: " + x + ", " + y );
-    syncMutex.leave();
-}
-
 static void run( const char* configFile )
 {
     try
@@ -162,21 +152,15 @@ static void run( const char* configFile )
                 world.removeAllPlayers();
             else if ( tokens[0] == "ls" )
             {
-                unsigned interval = 5000;
+                std::promise<std::vector<CharacterListQuery::Entry>> promise;
+                auto future = promise.get_future();
 
-                if ( !tokens[1].isEmpty() )
-                    interval = tokens[1];
+                broker.publish<CharacterListQuery>(std::move(promise));
+                auto list = future.get();
 
-                console.writeLine( ( String )" -- " + ( interval / 1000.0f ) + " s to sync" );
-
-                playerList.clear();
-                world.beginSync( syncPlayer );
-
-                pauseThread( interval );
-
-                world.endSync();
-                iterate ( playerList )
-                    console.writeLine( playerList.current() );
+                for ( auto& entry : list ) {
+                    console.writeLine( ( String )"[" + entry.pid + "] '" + entry.characterName.c_str() + "' ping = ? ms; world coords: " + entry.worldPos.x + ", " + entry.worldPos.y );
+                }
             }
             else if ( tokens[0] == "query" )
                 db.executeCommand( tokens[1] );

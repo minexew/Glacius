@@ -9,6 +9,7 @@
 #include "Config.hpp"
 #include "IOUtil.hpp"
 #include "LoginServer.hpp"
+#include "ServerState.hpp"
 #include "StatusServer.hpp"
 #include "WorldServer.hpp"
 
@@ -63,7 +64,7 @@ static void run( const char* configFile )
 
         if ( config.getOption( "Server/isConfigured", true ).isEmpty() )
         {
-            login.setStatus( true, "Initial configuration." );
+            broker.publish<ServerStateChange>( ServerState::down, "Initial configuration." );
 
             console.write( "\n\n-------------------------------------------------------------------------------\n" );
             console.writeLine( "## Welcome to Glacius!" );
@@ -104,7 +105,7 @@ static void run( const char* configFile )
 
             if ( tokens[0] == "down" )
             {
-                login.setStatus( true, tokens[1] );
+                broker.publish<ServerStateChange>(ServerState::down, tokens[1].c_str());
                 console.writeLine( " -- The server is now down for maintenance." );
             }
             else if ( tokens[0] == "exit" )
@@ -186,7 +187,7 @@ static void run( const char* configFile )
                 worldGlobal->serverMessage( tokens[1] );
             else if ( tokens[0] == "up" )
             {
-                login.setStatus( false );
+                broker.publish<ServerStateChange>(ServerState::up, "");
                 console.writeLine( " -- Server is back up!" );
             }
             else if ( tokens[0] == "objspawn" )

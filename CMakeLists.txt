@@ -21,6 +21,7 @@ set(SRC
         src/LoginServer.hpp
         src/PubSub.cpp
         src/PubSub.hpp
+        src/ServerState.hpp
         src/StatusServer.cpp
         src/StatusServer.hpp
         src/Util.hpp

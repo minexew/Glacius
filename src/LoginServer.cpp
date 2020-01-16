@@ -1,6 +1,7 @@
 
 #include "Config.hpp"
 #include "LoginServer.hpp"
+#include "ServerState.hpp"
 #include "Util.hpp"
 #include "WorldServer.hpp"
 
@@ -12,12 +13,14 @@ namespace Glacius
 
     LoginServer* loginGlobal = 0;
 
-    LoginServer::LoginServer(PubSub::Broker& broker, Config& config, Database& db) : nextId( 1 ), down( false ), broker(broker), db(db)
+    LoginServer::LoginServer(PubSub::Broker& broker, Config& config, Database& db) : nextId( 1 ), down( false ), db(db), sub(broker, myPipe)
     {
         listener = TcpSocket::create( false );
 
         if ( !listener || !listener->listen( config.getOption( "LoginServer/port" ).toInt() ) )
             throw Exception( "Glacius.LoginServer.StartupFailure", "Login Server startup failed (port already in use?)" );
+
+        sub.add<ServerStateChange>();
     }
 
     LoginServer::~LoginServer()
@@ -56,6 +59,12 @@ namespace Glacius
         {
             while ( !shouldEnd )
             {
+                while ( auto msg = myPipe.poll() ) {
+                    if ( auto req = msg->cast<ServerStateChange>() ) {
+                        setStatus(req->state == ServerState::down, req->reason.c_str());
+                    }
+                }
+
                 TcpSocket* incoming = listener->accept( false );
 
                 if ( incoming )
@@ -75,7 +84,7 @@ namespace Glacius
                     }
                     else
                     {
-                        LoginServerSession* session = new LoginServerSession( incoming, nextId++, broker, db );
+                        LoginServerSession* session = new LoginServerSession( incoming, nextId++, sub.getBroker(), db );
                         session->start();
                     }
 

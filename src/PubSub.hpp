@@ -119,6 +119,10 @@ public:
         broker.subscribe<T>(pipe);
     }
 
+    Broker& getBroker() {
+        return broker;
+    }
+
 private:
     Broker& broker;
     Pipe& pipe;

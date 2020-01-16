@@ -20,7 +20,6 @@ namespace Glacius
         bool down;
         String reason;
 
-        PubSub::Broker& broker;
         Database& db;
 
         public:
@@ -28,8 +27,13 @@ namespace Glacius
             virtual ~LoginServer();
 
             bool isDown( String& why );
-            void setStatus( bool maintenance, String why = String() );
             virtual void run();
+
+    private:
+        void setStatus( bool maintenance, String why );
+
+        PubSub::Pipe myPipe;
+        PubSub::Subscription sub;
     };
 
     class LoginServerSession : public Thread

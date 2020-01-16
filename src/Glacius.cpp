@@ -32,6 +32,8 @@ static void run( const char* configFile )
 {
     try
     {
+        PubSub::Broker broker;
+
         printf( "## reading configuration file: %s\n", configFile );
         Config config( configFile );
 
@@ -40,12 +42,12 @@ static void run( const char* configFile )
         auto& db = *the_db;
 
         printf( "## starting Login Server\n" );
-        loginGlobal = new LoginServer(config, db);
+        loginGlobal = new LoginServer(broker, config, db);
         loginGlobal->start();
         pauseThread( 200 );
 
         printf( "## starting World Server\n" );
-        worldGlobal = new WorldServer();
+        worldGlobal = new WorldServer(broker, db);
         worldGlobal->start();
         pauseThread( 200 );
 

@@ -13,8 +13,10 @@ namespace Glacius
 {
     WorldServer* worldGlobal = 0;
 
-    WorldServer::WorldServer() : numOnline( 0 ), onSync( 0 )
+    WorldServer::WorldServer(PubSub::Broker& broker, Database& db) : numOnline( 0 ), onSync( 0 ), db(db), sub(broker, myPipe)
     {
+        sub.add<WorldEnterRequest>();
+
         destroyOnExit();
     }
 
@@ -166,6 +168,13 @@ namespace Glacius
                 ...
                 leave();
                 */
+
+                while ( auto msg = myPipe.poll() ) {
+                    if ( auto req = msg->cast<WorldEnterRequest>() ) {
+                        WorldServerSession* wss = new WorldServerSession(req->socket.release(), req->charID, db);
+                        wss->start();
+                    }
+                }
 
                 pauseThread( 50 );
             }

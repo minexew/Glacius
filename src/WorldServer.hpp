@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Database.hpp"
+#include "PubSub.hpp"
 
 #include <littl.hpp>
 
@@ -17,6 +18,12 @@ namespace Glacius
 
     typedef void ( *SyncCallback )( unsigned pid, const String& name, unsigned interval, float x, float y );
 
+    struct WorldEnterRequest
+    {
+        unique_ptr<TcpSocket> socket;
+        int charID;
+    };
+
     class WorldServer : public Thread, public Mutex
     {
         List<WorldServerSession*> clients;
@@ -24,6 +31,10 @@ namespace Glacius
 
         clock_t syncBegin;
         SyncCallback onSync;
+
+        Database& db;
+        PubSub::Pipe myPipe;
+        PubSub::Subscription sub;
 
         void broadcast( const ArrayIOStream& buffer, unsigned excludePid );
         unsigned registerSession( WorldServerSession* session, CharacterProperties& props );
@@ -33,7 +44,7 @@ namespace Glacius
         friend class WorldServerSession;
 
         public:
-            WorldServer();
+            WorldServer(PubSub::Broker& broker, Database& db);
             virtual ~WorldServer();
 
             void beginSync( SyncCallback callback );

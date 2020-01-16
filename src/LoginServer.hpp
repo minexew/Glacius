@@ -2,6 +2,8 @@
 
 #include <littl.hpp>
 
+#include "PubSub.hpp"
+
 namespace Glacius
 {
     using namespace li;
@@ -20,10 +22,11 @@ namespace Glacius
         bool down;
         String reason;
 
+        PubSub::Broker& broker;
         Database& db;
 
         public:
-            LoginServer(Config& config, Database& db);
+            LoginServer(PubSub::Broker& broker, Config& config, Database& db);
             virtual ~LoginServer();
 
             bool isDown( String& why );
@@ -36,10 +39,11 @@ namespace Glacius
         TcpSocket* session;
         int id, accountID, charIDs[5];
 
+        PubSub::Broker& broker;
         Database& db;
 
         public:
-            LoginServerSession( TcpSocket* conn, int id, Database& db );
+            LoginServerSession( TcpSocket* conn, int id, PubSub::Broker& broker, Database& db );
             virtual ~LoginServerSession();
 
             virtual void run();

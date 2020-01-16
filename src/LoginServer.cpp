@@ -12,7 +12,7 @@ namespace Glacius
 
     LoginServer* loginGlobal = 0;
 
-    LoginServer::LoginServer(Config& config, Database& db) : nextId( 1 ), down( false ), db(db)
+    LoginServer::LoginServer(PubSub::Broker& broker, Config& config, Database& db) : nextId( 1 ), down( false ), broker(broker), db(db)
     {
         listener = TcpSocket::create( false );
 
@@ -77,7 +77,7 @@ namespace Glacius
                     }
                     else
                     {
-                        LoginServerSession* session = new LoginServerSession( incoming, nextId++, db );
+                        LoginServerSession* session = new LoginServerSession( incoming, nextId++, broker, db );
                         session->start();
                     }
 
@@ -94,8 +94,8 @@ namespace Glacius
         }
     }
 
-    LoginServerSession::LoginServerSession( TcpSocket* conn, int id, Database& db )
-        : session( conn ), id( id ), accountID( -1 ), db(db)
+    LoginServerSession::LoginServerSession( TcpSocket* conn, int id, PubSub::Broker& broker, Database& db )
+        : session( conn ), id( id ), accountID( -1 ), broker(broker), db(db)
     {
         printf( "[T_LS_%i] Construction (remote IP: %s)\n", id, session->getPeerIP() );
         destroyOnExit();
@@ -301,8 +301,7 @@ namespace Glacius
                     session->send( buffer );
 
                     printf( "[T_LS_%i] Entering world with character #%i!!\n", id, charIDs[charIndex] );
-                    WorldServerSession* wss = new WorldServerSession( session, charIDs[charIndex], db );
-                    wss->start();
+                    broker.publish<WorldEnterRequest>(unique_ptr<TcpSocket>(session), charIDs[charIndex]);
 
                     session = 0;
                     break;

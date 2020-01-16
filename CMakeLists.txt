@@ -19,6 +19,8 @@ set(SRC
         src/IOUtil.hpp
         src/LoginServer.cpp
         src/LoginServer.hpp
+        src/PubSub.cpp
+        src/PubSub.hpp
         src/StatusServer.cpp
         src/StatusServer.hpp
         src/Util.hpp
@@ -29,6 +31,7 @@ set(SRC
         )
 
 add_executable(${PROJECT_NAME} ${SRC})
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE -DSQLITE_OMIT_LOAD_EXTENSION=1)
 target_include_directories(${PROJECT_NAME} PUBLIC include)

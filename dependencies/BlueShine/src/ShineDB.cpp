@@ -69,11 +69,9 @@ namespace ShineDB
             return 0;
         }
         
-        /* Enable the auto-reconnecting. We could also do this using
-         * '  mySQL->reconnect = 1;  ', but this seems to be more
-         * forward-compatible
-         */
-        my_bool reconnect = 1;
+        // MySQL 8 removes `my_bool`.
+        // According to https://github.com/Motion-Project/motion/pull/1038/files, it should be ok to use an int
+        int reconnect = 1;
         mysql_options( mySQL, MYSQL_OPT_RECONNECT, &reconnect );
         
         /* Finally, create the session struct */

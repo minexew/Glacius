@@ -1,6 +1,7 @@
-# Ubuntu 18.04 provides GCC 7.4
-FROM ubuntu:18.04
+# Ubuntu 20.04 provides GCC 10.2
+FROM ubuntu:20.04
 
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y cmake libmysqlclient-dev gcc g++
 RUN gcc -v
 
@@ -10,8 +11,8 @@ WORKDIR /work
 RUN cd /work && cmake . && make VERBOSE=1 Glacius GlaciusRCC
 
 
-FROM ubuntu:18.04
-RUN apt-get update && apt-get install -y libmysqlclient20
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y libmysqlclient21
 
 COPY --from=0 /work/bin /srv/glacius
 WORKDIR /srv/glacius

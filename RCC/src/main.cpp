@@ -80,7 +80,7 @@ int main( int argc, char** argv )
         if ( command == "hello" )
         {
             buffer.writeString( "login.client_hello" );
-            buffer.write<short>( 1 );
+            buffer.write<short>( 3 );
         }
         else if ( command == "login" )
         {

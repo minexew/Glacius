@@ -7,14 +7,13 @@ services:
       - ./glacius.cfx2:/srv/glacius/glacius.cfx2
       - ./DB-r01.sql:/srv/glacius/schema.sql
     ports:
-     - "80:80"
+     - "10080:80"
      - "24897:24897"
     depends_on:
      - mariadb
 
   mariadb:
     image: mariadb:10.2
-    user: ${CURRENT_UID}
     command: --log-error      # suppress InnoDB spam
     environment:
       - MYSQL_DATABASE=realm
@@ -33,5 +32,5 @@ services:
      - PMA_USER=glacius
      - PMA_PASSWORD=password
     ports:
-     - "10081:80"
-
+     - "10081:10081"
+    command: ["bash", "-c", "sed -i s/Listen\\ 80/Listen\\ 10081/g /etc/apache2/ports.conf && /docker-entrypoint.sh apache2-foreground"]
